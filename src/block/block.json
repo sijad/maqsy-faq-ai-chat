@@ -1,0 +1,27 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "maqsy/faq",
+	"title": "FAQ",
+	"category": "widgets",
+	"icon": "sos",
+	"description": "Insert a Maqsy FAQ, with an optional template override.",
+	"keywords": ["faq", "questions", "accordion"],
+	"textdomain": "maqsy-faq-ai-chat",
+	"attributes": {
+		"postId": {
+			"type": "number",
+			"default": 0
+		},
+		"template": {
+			"type": "string",
+			"default": ""
+		}
+	},
+	"supports": {
+		"html": false
+	},
+	"editorScript": "file:./index.js",
+	"style": "maqsy-public",
+	"render": "file:./render.php"
+}

@@ -1,0 +1,22 @@
+{
+	"name": "maqsy-chat-runtime",
+	"private": true,
+	"version": "0.0.0",
+	"description": "Isolated project for the lazy-loaded AI chat bundle (React 19 + @shadcn/react + TypeScript). Its source lives under chat-runtime/src and is compiled from here (not the plugin root) so normal node_modules resolution finds React 19 naturally, without needing tsconfig path hacks. Kept separate from the plugin root's node_modules because @wordpress/babel-preset-default hard-pins React 18 for wp-scripts' own build tooling, which would otherwise conflict with @shadcn/react's React >=19 peer requirement. The root package.json's esbuild scripts point at chat-runtime/src/chat-launcher/index.ts as their entry, and esbuild resolves its imports from chat-runtime/node_modules since that's the nearest node_modules on disk.",
+	"scripts": {
+		"typecheck": "tsc --noEmit -p tsconfig.json"
+	},
+	"dependencies": {
+		"@base-ui/react": "^1.7.0",
+		"@shadcn/react": "^0.3.0",
+		"clsx": "^2.1.1",
+		"react": "^19.2.0",
+		"react-dom": "^19.2.0",
+		"tailwind-merge": "^3.6.0"
+	},
+	"devDependencies": {
+		"@types/react": "^19.2.0",
+		"@types/react-dom": "^19.2.0",
+		"typescript": "^7.0.2"
+	}
+}

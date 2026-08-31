@@ -1,0 +1,8 @@
+/node_modules/
+/vendor/
+/build/
+/chat-runtime/node_modules/
+/chat-runtime/src/chat-app/tailwind.built.txt
+.DS_Store
+maqsy-faq-ai-chat.zip
+maqsy.zip

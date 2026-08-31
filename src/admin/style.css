@@ -1,0 +1,145 @@
+#maqsy {
+	margin: 1em 0;
+}
+
+#maqsy .maqsy-shortcode {
+	margin-bottom: 1em;
+	font-size: 13px;
+}
+
+#maqsy .maqsy-shortcode label {
+	font-weight: 600;
+	margin-right: 0.25em;
+}
+
+#maqsy .maqsy-shortcode code {
+	padding: 0.25em 0.5em;
+	background: #1d2327;
+	color: #fff;
+	border-radius: 3px;
+	user-select: all;
+}
+
+/* Question list */
+#maqsy .maqsy-questions {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+	margin-bottom: 1rem;
+}
+
+#maqsy .maqsy-question {
+	display: flex;
+	align-items: stretch;
+	gap: 0.5rem;
+	padding: 0.75rem;
+	background: #fff;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+	box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+}
+
+#maqsy .maqsy-question.ui-sortable-helper {
+	box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+}
+
+#maqsy .maqsy-question-placeholder {
+	visibility: visible !important;
+	box-sizing: border-box;
+	outline: 2px dashed var(--wp-admin-theme-color, #2271b1);
+	outline-offset: -2px;
+	border-radius: 4px;
+	background: #f6f7f7;
+}
+
+/* Drag handle */
+#maqsy .maqsy-handle {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex: 0 0 1.75rem;
+	color: #a7aaad;
+	cursor: grab;
+	border-radius: 3px;
+}
+
+#maqsy .maqsy-handle:hover {
+	color: #1d2327;
+	background: #f0f0f1;
+}
+
+#maqsy .maqsy-handle:active {
+	cursor: grabbing;
+}
+
+#maqsy .maqsy-question.ui-sortable-helper .maqsy-handle {
+	cursor: grabbing;
+}
+
+/* Fields column */
+#maqsy .maqsy-fields {
+	flex: 1;
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+}
+
+#maqsy .maqsy-row-head {
+	display: flex;
+	gap: 0.5rem;
+}
+
+#maqsy .maqsy-q {
+	flex: 1;
+	font-weight: 600;
+}
+
+#maqsy .maqsy-a {
+	width: 100%;
+}
+
+/* Keep the WYSIWYG within the row */
+#maqsy .wp-editor-wrap {
+	width: 100%;
+}
+
+#maqsy .maqsy-delete,
+#maqsy #maqsy-add-question {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.25em;
+	line-height: 1;
+}
+
+#maqsy .maqsy-delete .dashicons,
+#maqsy #maqsy-add-question .dashicons {
+	width: auto;
+	height: auto;
+	font-size: 18px;
+	line-height: 1;
+}
+
+#maqsy .maqsy-delete {
+	flex: 0 0 auto;
+	align-self: stretch;
+	padding: 0 0.5em;
+	color: #d63638;
+	border-color: #d63638;
+}
+
+#maqsy .maqsy-delete:hover,
+#maqsy .maqsy-delete:focus {
+	border-color: #b32d2e;
+	color: #b32d2e;
+}
+
+#maqsy .maqsy-delete:focus {
+	box-shadow: 0 0 0 var(--wp-admin-border-width-focus, 1.5px) #b32d2e;
+	outline: 2px solid transparent;
+}
+
+#post-body .maqsy-template-section::before {
+	content: "\f100";
+}
