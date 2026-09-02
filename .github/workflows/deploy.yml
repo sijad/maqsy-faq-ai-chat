@@ -15,7 +15,7 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
 
       - name: Install dependencies
@@ -28,15 +28,8 @@ jobs:
 
       - name: Deploy to WordPress.org SVN
         uses: 10up/action-wordpress-plugin-deploy@stable
-        with:
-          generate-zip: true
         env:
           SVN_USERNAME: ${{ secrets.SVN_USERNAME }}
           SVN_PASSWORD: ${{ secrets.SVN_PASSWORD }}
           SLUG: maqsy-faq-ai-chat
           ASSETS_DIR: .wordpress-org
-
-      - name: Attach ZIP to GitHub release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: ${{ github.workspace }}/maqsy-faq-ai-chat.zip
