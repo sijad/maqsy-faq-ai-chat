@@ -6,7 +6,6 @@ on:
     paths:
       - readme.txt
       - .wordpress-org/**
-      - .github/workflows/assets.yml
 
 jobs:
   assets:
