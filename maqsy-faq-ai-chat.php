@@ -14,7 +14,7 @@
  * Plugin Name:       Maqsy: FAQ Manager and AI Chat
  * Plugin URI:        https://github.com/sijad/maqsy-faq-ai-chat
  * Description:       Manage FAQs as a custom post type, insert them anywhere via shortcode or block, and let an AI chat widget answer visitor questions grounded in that content.
- * Version:           1.0.0
+ * Version:           1.1.0
  * Requires at least: 6.5
  * Requires PHP:      7.4
  * Author:            Sajjad Hashemian
@@ -35,7 +35,7 @@ if ( ! defined( 'WPINC' ) ) {
  * Start at version 1.0.0 and use SemVer - https://semver.org
  * Rename this for your plugin and update it as you release new versions.
  */
-define( 'MAQSY_VERSION', '1.0.0' );
+define( 'MAQSY_VERSION', '1.1.0' );
 
 /**
  * The code that runs during plugin activation.

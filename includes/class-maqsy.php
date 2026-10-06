@@ -67,7 +67,7 @@ class Maqsy {
 		if ( defined( 'MAQSY_VERSION' ) ) {
 			$this->version = MAQSY_VERSION;
 		} else {
-			$this->version = '1.0.0';
+			$this->version = '1.1.0';
 		}
 		$this->plugin_name = 'maqsy';
 
@@ -175,7 +175,6 @@ class Maqsy {
 
 		$this->loader->add_action( 'init', $plugin_public, 'init' );
 		$this->loader->add_action( 'wp_enqueue_scripts', $plugin_public, 'enqueue_styles' );
-		$this->loader->add_action( 'wp_enqueue_scripts', $plugin_public, 'enqueue_scripts' );
 		$this->loader->add_action( 'wp_enqueue_scripts', $plugin_public, 'enqueue_chat_widget' );
 	}
 

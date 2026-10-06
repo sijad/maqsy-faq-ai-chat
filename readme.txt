@@ -2,9 +2,9 @@
 Contributors: sijad
 Tags: faq, accordion, ai chat, chatbot, structured data
 Requires at least: 6.5
-Tested up to: 7.1
+Tested up to: 7.1.2
 Requires PHP: 7.4
-Stable tag: 1.0.0
+Stable tag: 1.1.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.txt
 
@@ -108,8 +108,8 @@ in that content. See the "External services" section for exactly what is sent.
 
 = Does the plugin work without JavaScript? =
 
-The Simple template and the structured data are pure server-side HTML. The
-Accordion template's expand/collapse needs JavaScript. The AI chat widget needs
+Both FAQ templates and the structured data work without JavaScript. The Accordion
+template uses native HTML details/summary elements. The AI chat widget needs
 JavaScript.
 
 = What happens to my data when I uninstall? =
@@ -134,10 +134,18 @@ and `maqsy_ai_after_response` are also available.
 
 == Changelog ==
 
+= 1.1.0 =
+* Use native details/summary elements for the Accordion template, with keyboard support and no JavaScript required.
+* Add Maqsy_Public::get_schema( $id ) to retrieve FAQPage structured data separately.
+* Remove the FAQ accordion script and its manual accessibility state handling.
+
 = 1.0.0 =
 * Initial release.
 
 == Upgrade Notice ==
+
+= 1.1.0 =
+Accordion FAQs now use native details/summary markup. Update custom button or .active CSS selectors to target summary and details[open].
 
 = 1.0.0 =
 Initial release.

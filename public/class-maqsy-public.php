@@ -38,21 +38,6 @@ class Maqsy_Public {
 	private $version;
 
 	/**
-	 * Whether an accordion-template FAQ has been rendered on this request.
-	 *
-	 * The public script only wires up the accordion expand/collapse behaviour —
-	 * the "simple" template is static — so there's no reason to load it unless an
-	 * accordion is actually on the page. render_faq() flips this on; the enqueue
-	 * is deferred to wp_footer (see maybe_enqueue_script()) because the effective
-	 * template isn't known until the shortcode/block runs during the_content.
-	 *
-	 * @since    1.0.0
-	 * @access   private
-	 * @var      bool
-	 */
-	private static $accordion_rendered = false;
-
-	/**
 	 * Initialize the class and set its properties.
 	 *
 	 * @since    1.0.0
@@ -276,7 +261,7 @@ class Maqsy_Public {
 		$questions = get_post_meta( $id, '_maqsy_questions', true );
 		$questions = $questions ? json_decode( $questions, true ) : array();
 
-		if ( ! $questions || count( $questions ) === 0 ) {
+		if ( ! is_array( $questions ) || empty( $questions ) ) {
 			return '';
 		}
 
@@ -290,31 +275,57 @@ class Maqsy_Public {
 
 		$wrapper_tag = 'accordion' === $template ? 'ul' : 'dl';
 
-		if ( 'accordion' === $template ) {
-			self::$accordion_rendered = true;
+		$html = "<$wrapper_tag class=\"" . esc_attr( implode( ' ', $classes ) ) . '">';
+
+		foreach ( $questions as $q ) {
+			$question = esc_html( $q['question'] );
+			$answer   = wp_kses_post( wpautop( $q['answer'] ) );
+			if ( 'accordion' === $template ) {
+				$html .= '<li><details class="maqsy-item">';
+				$html .= "<summary class=\"maqsy-question\">$question</summary>";
+				$html .= "<div class=\"maqsy-answer\"><div class=\"maqsy-answer-content\">$answer</div></div>";
+				$html .= '</details></li>';
+			} else {
+				$html .= "<dt class=\"maqsy-question\">$question</dt>";
+				$html .= "<dd class=\"maqsy-answer\"><div class=\"maqsy-answer-content\">$answer</div></dd>";
+			}
 		}
 
-		$html   = "<$wrapper_tag class=\"" . esc_attr( implode( ' ', $classes ) ) . '">';
+		$html  .= "</$wrapper_tag>";
+		$schema = "\n<script type=\"application/ld+json\">" . wp_json_encode( self::get_schema( $id ), JSON_PRETTY_PRINT | JSON_HEX_TAG ) . "</script>\n";
+
+		return $html . $schema;
+	}
+
+	/**
+	 * Get a published FAQ post's structured data without rendering its markup.
+	 *
+	 * @since    1.1.0
+	 * @param    int $id The `maqsy` post ID.
+	 * @return   array FAQPage schema, or an empty array if no FAQ is available.
+	 */
+	public static function get_schema( $id ) {
+
+		$id = intval( $id );
+
+		if ( ! $id || 'maqsy' !== get_post_type( $id ) || 'publish' !== get_post_status( $id ) ) {
+			return array();
+		}
+
+		$questions = get_post_meta( $id, '_maqsy_questions', true );
+		$questions = $questions ? json_decode( $questions, true ) : array();
+
+		if ( ! is_array( $questions ) || empty( $questions ) ) {
+			return array();
+		}
+
 		$schema = array(
 			'@context'   => 'https://schema.org',
 			'@type'      => 'FAQPage',
 			'mainEntity' => array(),
 		);
 
-		foreach ( $questions as $i => $q ) {
-			$question = esc_html( $q['question'] );
-			$answer   = wp_kses_post( wpautop( $q['answer'] ) );
-			$desc_id  = "maqsy_{$id}_{$i}_desc";
-			if ( 'accordion' === $template ) {
-				$html .= '<li class="maqsy-item">';
-				$html .= "<button type=\"button\" class=\"maqsy-question\" aria-expanded=\"false\" aria-controls=\"$desc_id\">$question</button>";
-				// Collapsed by default: hide from assistive tech and remove from the tab order until expanded, matching the initial visual (CSS) state.
-				$html .= "<div id=\"$desc_id\" class=\"maqsy-answer\" aria-hidden=\"true\" inert><div class=\"maqsy-answer-content\">$answer</div></div>";
-				$html .= '</li>';
-			} else {
-				$html .= "<dt class=\"maqsy-question\">$question</dt>";
-				$html .= "<dd class=\"maqsy-answer\"><div class=\"maqsy-answer-content\">$answer</div></dd>";
-			}
+		foreach ( $questions as $q ) {
 			$schema['mainEntity'][] = array(
 				'@type'          => 'Question',
 				'name'           => wp_strip_all_tags( $q['question'] ),
@@ -325,10 +336,7 @@ class Maqsy_Public {
 			);
 		}
 
-		$html  .= "</$wrapper_tag>";
-		$schema = "\n<script type=\"application/ld+json\">" . wp_json_encode( $schema, JSON_PRETTY_PRINT | JSON_HEX_TAG ) . "</script>\n";
-
-		return $html . $schema;
+		return $schema;
 	}
 
 	/**
@@ -361,50 +369,6 @@ class Maqsy_Public {
 		}
 
 		wp_enqueue_style( $this->plugin_name . '-public' );
-	}
-
-	/**
-	 * Register the JavaScript for the public-facing side of the site.
-	 *
-	 * @since    1.0.0
-	 */
-	public function enqueue_scripts() {
-
-		if ( ! $this->should_enqueue_assets() ) {
-			return;
-		}
-
-		$asset_file = plugin_dir_path( __DIR__ ) . 'build/public.asset.php';
-		if ( ! file_exists( $asset_file ) ) {
-			return;
-		}
-
-		$asset = include $asset_file;
-
-		wp_register_script(
-			$this->plugin_name,
-			plugin_dir_url( __DIR__ ) . 'build/public.js',
-			$asset['dependencies'],
-			$asset['version'],
-			true
-		);
-
-		add_action( 'wp_footer', array( $this, 'maybe_enqueue_script' ), 1 );
-	}
-
-	/**
-	 * Enqueue the public script only if an accordion FAQ was rendered.
-	 *
-	 * Hooked on wp_footer (priority 1, before wp_print_footer_scripts) so it sees
-	 * the outcome of every shortcode/block rendered during the_content.
-	 *
-	 * @since    1.0.0
-	 */
-	public function maybe_enqueue_script() {
-
-		if ( self::$accordion_rendered ) {
-			wp_enqueue_script( $this->plugin_name );
-		}
 	}
 
 	/**

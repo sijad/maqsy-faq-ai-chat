@@ -53,6 +53,8 @@
 
 .maqsy.accordion .maqsy-question {
 	cursor: pointer;
+	list-style: none;
+	padding-right: 1.5em;
 }
 
 .maqsy.accordion .maqsy-question:focus-visible {
@@ -64,10 +66,8 @@
 	padding: 0.5rem 0;
 }
 
-.maqsy.accordion .maqsy-answer {
-	max-height: 0;
-	overflow: hidden;
-	transition: max-height 0.2s ease-out;
+.maqsy.accordion .maqsy-question::-webkit-details-marker {
+	display: none;
 }
 
 .maqsy.accordion .maqsy-question::after {
@@ -85,13 +85,11 @@
 	transition: transform 0.2s ease-in-out;
 }
 
-.maqsy.accordion .maqsy-item.active .maqsy-question::after {
+.maqsy.accordion .maqsy-item[open] .maqsy-question::after {
 	transform: rotate(180deg);
 }
 
 @media (prefers-reduced-motion: reduce) {
-
-	.maqsy.accordion .maqsy-answer,
 	.maqsy.accordion .maqsy-question::after {
 		transition: none;
 	}
