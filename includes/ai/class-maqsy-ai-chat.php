@@ -113,7 +113,7 @@ class Maqsy_AI_Chat {
 	}
 
 	/**
-	 * Collect all published FAQ questions/answers as plain text context.
+	 * Collect all published FAQs, preserving link URLs, labels, and titles.
 	 *
 	 * @since  1.0.0
 	 * @return string
@@ -128,7 +128,12 @@ class Maqsy_AI_Chat {
 			)
 		);
 
-		$lines = array();
+		$lines        = array();
+		$allowed_html = array(
+			'a' => array(
+				'href' => true,
+			),
+		);
 		foreach ( $faq_posts as $faq_post ) {
 			$questions = get_post_meta( $faq_post->ID, '_maqsy_questions', true );
 			$questions = $questions ? json_decode( $questions, true ) : false;
@@ -138,7 +143,7 @@ class Maqsy_AI_Chat {
 			}
 			$lines[] = $faq_post->post_title . ' FAQs:';
 			foreach ( $questions as $question ) {
-				$lines[] = 'Q: ' . wp_strip_all_tags( $question['question'] ) . "\nA: " . wp_strip_all_tags( $question['answer'] );
+				$lines[] = 'Q: ' . wp_kses( $question['question'], $allowed_html ) . "\nA: " . wp_kses( $question['answer'], $allowed_html );
 			}
 		}
 
