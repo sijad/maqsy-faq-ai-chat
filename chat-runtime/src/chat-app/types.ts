@@ -8,6 +8,9 @@ export interface ChatSettings {
 	buttonLabel: string;
 	welcomeMessage: string;
 	errorMessage: string;
+	historyLimit: number;
+	loadingMessage: string;
+	waitingMessage: string;
 	colorMode: ColorMode;
 	storageKey: string;
 	primaryColor: string;
@@ -16,6 +19,7 @@ export interface ChatSettings {
 export interface ChatMessage {
 	role: "user" | "assistant";
 	content: string;
+	isError?: boolean;
 }
 
 export interface ChatAppApi {

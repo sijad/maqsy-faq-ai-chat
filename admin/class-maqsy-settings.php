@@ -50,6 +50,7 @@ class Maqsy_Settings {
 			'button_label'        => __( 'Chat with us', 'maqsy-faq-ai-chat' ),
 			'welcome_message'     => __( 'Ask a question and I\'ll do my best to answer using our FAQs.', 'maqsy-faq-ai-chat' ),
 			'custom_instructions' => '',
+			'history_limit'       => 6,
 			'color_mode'          => 'auto',
 			'primary_color'       => '#2563eb',
 		);
@@ -190,6 +191,7 @@ class Maqsy_Settings {
 			'api_key'             => __( 'API key', 'maqsy-faq-ai-chat' ),
 			'base_url'            => __( 'API base URL', 'maqsy-faq-ai-chat' ),
 			'model'               => __( 'Model', 'maqsy-faq-ai-chat' ),
+			'history_limit'       => __( 'Previous messages to include', 'maqsy-faq-ai-chat' ),
 			'title'               => __( 'Chat window title', 'maqsy-faq-ai-chat' ),
 			'button_label'        => __( 'Chat button label', 'maqsy-faq-ai-chat' ),
 			'welcome_message'     => __( 'Welcome message', 'maqsy-faq-ai-chat' ),
@@ -237,6 +239,8 @@ class Maqsy_Settings {
 		$output['color_mode']          = isset( $input['color_mode'], self::get_color_modes()[ $input['color_mode'] ] ) ? $input['color_mode'] : $defaults['color_mode'];
 		$output['primary_color']       = ! empty( $input['primary_color'] ) && sanitize_hex_color( $input['primary_color'] ) ? sanitize_hex_color( $input['primary_color'] ) : $defaults['primary_color'];
 
+		$output['history_limit'] = isset( $input['history_limit'] ) && is_numeric( $input['history_limit'] ) ? max( 0, min( 20, (int) $input['history_limit'] ) ) : $defaults['history_limit'];
+
 		return $output;
 	}
 
@@ -281,6 +285,10 @@ class Maqsy_Settings {
 
 			case 'api_key':
 				printf( '<input type="password" class="regular-text" name="%1$s" value="%2$s" autocomplete="off" />', esc_attr( $name ), esc_attr( $value ) );
+				break;
+
+			case 'history_limit':
+				printf( '<input type="number" min="0" max="20" step="1" name="%1$s" value="%2$s" /><p class="description">%3$s</p>', esc_attr( $name ), esc_attr( $value ), esc_html__( 'Send this many previous visitor and assistant messages with each new question, in chronological order. The current question is always included separately. Set to 0 to disable conversation history. More messages may increase API usage.', 'maqsy-faq-ai-chat' ) );
 				break;
 
 			case 'primary_color':

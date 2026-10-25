@@ -1,3 +1,12 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@keyframes maqsy-typing {
+  0%, 60%, 100% { opacity: .4; transform: translateY(0); }
+  30% { opacity: 1; transform: translateY(-3px); }
+}
+.maqsy-typing-dot { animation: maqsy-typing 1.2s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .maqsy-typing-dot { animation: none; }
+}

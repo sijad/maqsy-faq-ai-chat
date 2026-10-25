@@ -22,9 +22,10 @@ class Maqsy_AI_Chat {
 	 *
 	 * @since  1.0.0
 	 * @param  string $question The visitor's message.
+	 * @param  array  $history Previous visitor and assistant messages.
 	 * @return string|WP_Error
 	 */
-	public static function ask( $question ) {
+	public static function ask( $question, array $history = array() ) {
 
 		$settings = Maqsy_Settings::get_settings();
 
@@ -43,10 +44,27 @@ class Maqsy_AI_Chat {
 				'role'    => 'system',
 				'content' => self::build_system_prompt( $settings ),
 			),
-			array(
-				'role'    => 'user',
-				'content' => $question,
-			),
+		);
+
+		$limit = max( 0, min( 20, (int) $settings['history_limit'] ) );
+		if ( $limit > 0 ) {
+			foreach ( array_slice( $history, -$limit ) as $message ) {
+				if ( ! is_array( $message ) || ! isset( $message['role'], $message['content'] ) || ! in_array( $message['role'], array( 'user', 'assistant' ), true ) || ! is_string( $message['content'] ) ) {
+					continue;
+				}
+				$content = trim( sanitize_textarea_field( $message['content'] ) );
+				if ( '' === $content || strlen( $content ) > 64000 || ( 'user' === $message['role'] && strlen( $content ) > 1000 ) ) {
+					continue;
+				}
+				$messages[] = array(
+					'role'    => $message['role'],
+					'content' => $content,
+				);
+			}
+		}
+		$messages[] = array(
+			'role'    => 'user',
+			'content' => $question,
 		);
 
 		/**

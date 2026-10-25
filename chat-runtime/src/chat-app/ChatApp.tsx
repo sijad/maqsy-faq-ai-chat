@@ -29,6 +29,16 @@ export function ChatApp({ settings, open, onClose, anchor, container }: ChatAppP
 	const [messages, setMessages] = useStoredMessages(settings.storageKey);
 	const [input, setInput] = useState("");
 	const [isSending, setIsSending] = useState(false);
+	const [isLongWait, setIsLongWait] = useState(false);
+
+	useEffect(() => {
+		if (!isSending) {
+			setIsLongWait(false);
+			return;
+		}
+		const timer = window.setTimeout(() => setIsLongWait(true), 10000);
+		return () => window.clearTimeout(timer);
+	}, [isSending]);
 	const isDark = useColorMode(settings.colorMode);
 	const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -68,7 +78,14 @@ export function ChatApp({ settings, open, onClose, anchor, container }: ChatAppP
 			const res = await fetch(settings.restUrl, {
 				method: "POST",
 				headers,
-				body: JSON.stringify({ message: text }),
+				body: JSON.stringify({
+					message: text,
+					history: settings.historyLimit > 0
+						? messages.filter((message) => !message.isError)
+							.slice(-Math.min(20, settings.historyLimit))
+							.map(({ role, content }) => ({ role, content: content.slice(0, 16000) }))
+						: [],
+				}),
 			});
 			const data = await res.json();
 
@@ -78,7 +95,7 @@ export function ChatApp({ settings, open, onClose, anchor, container }: ChatAppP
 
 			setMessages([...nextMessages, { role: "assistant", content: data.reply }]);
 		} catch (error) {
-			setMessages([...nextMessages, { role: "assistant", content: settings.errorMessage }]);
+			setMessages([...nextMessages, { role: "assistant", content: settings.errorMessage, isError: true }]);
 		} finally {
 			setIsSending(false);
 		}
@@ -186,7 +203,14 @@ export function ChatApp({ settings, open, onClose, anchor, container }: ChatAppP
 								))}
 								{isSending && (
 									<MessageScrollerItem messageId="pending" scrollAnchor={false}>
-										<div className="text-sm text-gray-400 dark:text-gray-500">…</div>
+										<div role="status" className="flex w-fit max-w-[85%] items-center gap-3 rounded-lg bg-gray-100 px-3 py-3 text-sm text-gray-600 dark:bg-gray-800 dark:text-gray-300">
+											<span aria-hidden="true" className="flex shrink-0 gap-1">
+												{[0, 1, 2].map((dot) => (
+													<span key={dot} className="maqsy-typing-dot size-1.5 rounded-full bg-current" style={{ animationDelay: `${dot * 160}ms` }} />
+												))}
+											</span>
+											<span>{isLongWait ? settings.waitingMessage : settings.loadingMessage}</span>
+										</div>
 									</MessageScrollerItem>
 								)}
 							</MessageScrollerContent>

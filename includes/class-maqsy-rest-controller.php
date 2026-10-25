@@ -76,6 +76,25 @@ class Maqsy_Rest_Controller {
 				'callback'            => array( $this, 'post_chat' ),
 				'permission_callback' => '__return_true',
 				'args'                => array(
+					'history' => array(
+						'type'     => 'array',
+						'default'  => array(),
+						'maxItems' => 20,
+						'items'    => array(
+							'type'       => 'object',
+							'required'   => array( 'role', 'content' ),
+							'properties' => array(
+								'role'    => array(
+									'type' => 'string',
+									'enum' => array( 'user', 'assistant' ),
+								),
+								'content' => array(
+									'type'      => 'string',
+									'maxLength' => 16000,
+								),
+							),
+						),
+					),
 					'message' => array(
 						'required'          => true,
 						'type'              => 'string',
@@ -203,7 +222,7 @@ class Maqsy_Rest_Controller {
 			return $rate_limit_error;
 		}
 
-		$reply = Maqsy_AI_Chat::ask( $message );
+		$reply = Maqsy_AI_Chat::ask( $message, (array) $request->get_param( 'history' ) );
 
 		if ( is_wp_error( $reply ) ) {
 			$reply->add_data( array( 'status' => 502 ) );
