@@ -67,7 +67,7 @@ class Maqsy {
 		if ( defined( 'MAQSY_VERSION' ) ) {
 			$this->version = MAQSY_VERSION;
 		} else {
-			$this->version = '1.1.0';
+			$this->version = '1.2.0';
 		}
 		$this->plugin_name = 'maqsy';
 
@@ -75,6 +75,7 @@ class Maqsy {
 		$this->define_admin_hooks();
 		$this->define_public_hooks();
 		$this->define_rest_hooks();
+		$this->define_quiz_hooks();
 	}
 
 	/**
@@ -135,6 +136,21 @@ class Maqsy {
 		 */
 		require_once plugin_dir_path( __DIR__ ) . 'admin/class-maqsy-settings.php';
 
+		/**
+		 * The classes that implement conversational quizzes: the definition
+		 * schema, the runtime engine, storage, analytics, AI generation, and
+		 * their REST routes and admin screens.
+		 */
+		require_once plugin_dir_path( __DIR__ ) . 'includes/quiz/class-maqsy-quiz-schema.php';
+		require_once plugin_dir_path( __DIR__ ) . 'includes/quiz/class-maqsy-quiz-engine.php';
+		require_once plugin_dir_path( __DIR__ ) . 'includes/quiz/class-maqsy-quiz-store.php';
+		require_once plugin_dir_path( __DIR__ ) . 'includes/quiz/class-maqsy-quizzes.php';
+		require_once plugin_dir_path( __DIR__ ) . 'includes/quiz/class-maqsy-quiz-analytics.php';
+		require_once plugin_dir_path( __DIR__ ) . 'includes/quiz/class-maqsy-quiz-generator.php';
+		require_once plugin_dir_path( __DIR__ ) . 'includes/quiz/class-maqsy-quiz-privacy.php';
+		require_once plugin_dir_path( __DIR__ ) . 'includes/quiz/class-maqsy-quiz-rest-controller.php';
+		require_once plugin_dir_path( __DIR__ ) . 'admin/class-maqsy-quiz-admin.php';
+
 		$this->loader = new Maqsy_Loader();
 	}
 
@@ -189,6 +205,45 @@ class Maqsy {
 		$rest_controller = new Maqsy_Rest_Controller();
 
 		$this->loader->add_action( 'rest_api_init', $rest_controller, 'register_routes' );
+	}
+
+	/**
+	 * Register all of the hooks related to conversational quizzes.
+	 *
+	 * @since    1.2.0
+	 * @access   private
+	 */
+	private function define_quiz_hooks() {
+
+		$quizzes = new Maqsy_Quizzes();
+
+		$this->loader->add_action( 'init', $quizzes, 'init' );
+		$this->loader->add_action( 'clean_post_cache', 'Maqsy_Quizzes', 'flush_cache', 10, 2 );
+
+		$quiz_rest = new Maqsy_Quiz_Rest_Controller();
+
+		$this->loader->add_action( 'rest_api_init', $quiz_rest, 'register_routes' );
+
+		$quiz_admin = new Maqsy_Quiz_Admin();
+
+		// Not just on activation: activation hooks don't run on plugin updates.
+		$this->loader->add_action( 'init', 'Maqsy_Quiz_Store', 'maybe_upgrade' );
+		$this->loader->add_action( 'admin_menu', $quiz_admin, 'add_menu' );
+		$this->loader->add_action( 'edit_form_after_title', $quiz_admin, 'edit_form_after_title' );
+		$this->loader->add_action( 'save_post_' . Maqsy_Quizzes::POST_TYPE, $quiz_admin, 'save_post' );
+		$this->loader->add_action( 'before_delete_post', $quiz_admin, 'before_delete_post' );
+		$this->loader->add_action( 'admin_enqueue_scripts', $quiz_admin, 'enqueue_assets' );
+		$this->loader->add_action( 'admin_post_maqsy_quiz_export', $quiz_admin, 'export_csv' );
+		$this->loader->add_action( 'manage_' . Maqsy_Quizzes::POST_TYPE . '_posts_custom_column', $quiz_admin, 'list_column', 10, 2 );
+		$this->loader->add_filter( 'manage_' . Maqsy_Quizzes::POST_TYPE . '_posts_columns', $quiz_admin, 'list_columns' );
+		$this->loader->add_filter( 'post_row_actions', $quiz_admin, 'row_actions', 10, 2 );
+		$this->loader->add_filter( 'enter_title_here', $quiz_admin, 'enter_title_here', 10, 2 );
+		$this->loader->add_filter( 'parent_file', $quiz_admin, 'parent_file' );
+
+		$quiz_privacy = new Maqsy_Quiz_Privacy();
+
+		$this->loader->add_filter( 'wp_privacy_personal_data_exporters', $quiz_privacy, 'register_exporter' );
+		$this->loader->add_filter( 'wp_privacy_personal_data_erasers', $quiz_privacy, 'register_eraser' );
 	}
 
 	/**

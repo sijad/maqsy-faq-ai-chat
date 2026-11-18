@@ -69,4 +69,24 @@ add_filter( 'maqsy_ai_providers', function ( $providers ) {
 } );
 ```
 
+### Quizzes
+
+Build quizzes under **FAQs → Quizzes** and track them under **FAQs → Quiz Analytics**. Visitors take them inside the chat widget, started from its "Help me choose" menu, by a message that is exactly one of the quiz's chat keywords (matched server-side in `POST /chat` before any AI call, so keywords never reach the page source), from a card the AI offers (it appends a `[[quiz:ID]]` token that the server turns into a structured suggestion), from `[maqsy_quiz id="123" label="Find your plan"]`, from any `#maqsy-quiz-123` link, or from `window.maqsyChat.startQuiz(123, 'link')`.
+
+Architecture:
+
+- `includes/quiz/class-maqsy-quiz-schema.php` — the quiz definition format and its sanitizer (unique IDs, forward-only branches, conditions only on earlier questions — so every path is finite).
+- `includes/quiz/class-maqsy-quiz-engine.php` — stateless runtime: next question, conditions, outcome selection (rules → points → fallback), placeholders. Shared by live sessions and the builder's preview.
+- `includes/quiz/class-maqsy-quiz-store.php` — `{prefix}maqsy_quiz_sessions` and `{prefix}maqsy_quiz_events` tables (installed/upgraded via `dbDelta`).
+- `includes/quiz/class-maqsy-quiz-rest-controller.php` — `maqsy/v1/quiz/*` routes. The server owns progress; clients only answer the current question.
+- `src/quiz-builder`, `src/quiz-analytics` — admin apps (wp-scripts); `chat-runtime/src/chat-app/useQuiz.ts` and `quiz/` — the visitor UI.
+
+```php
+add_action( 'maqsy_quiz_completed', function ( $session, $result, $lead, $quiz ) {
+	if ( $lead['email'] ) {
+		my_crm_add_contact( $lead['email'], $lead['name'], $result['title'] );
+	}
+}, 10, 4 );
+```
+
 `maqsy_ai_system_prompt` (filter) and `maqsy_ai_before_request` / `maqsy_ai_after_response` (actions) are also available for customizing the prompt or observing requests.

@@ -44,7 +44,8 @@ interface Maqsy_AI_Provider {
 	 *
 	 * @since  1.0.0
 	 * @param  array $messages Array of { role: 'system'|'user'|'assistant', content: string }.
-	 * @param  array $settings The plugin's AI settings (api_key, model, etc.).
+	 * @param  array $settings The plugin's AI settings (api_key, model, etc.), plus an
+	 *                         optional `timeout` in seconds for this request.
 	 * @return string|WP_Error The assistant's reply text, or a WP_Error on failure.
 	 */
 	public function send_message( array $messages, array $settings );

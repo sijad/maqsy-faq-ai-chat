@@ -38,7 +38,7 @@ class Maqsy_Rest_Controller {
 			array(
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => array( $this, 'get_faqs' ),
-				'permission_callback' => array( $this, 'editor_permissions_check' ),
+				'permission_callback' => array( __CLASS__, 'editor_permissions_check' ),
 			)
 		);
 
@@ -48,7 +48,7 @@ class Maqsy_Rest_Controller {
 			array(
 				'methods'             => WP_REST_Server::CREATABLE,
 				'callback'            => array( $this, 'post_models' ),
-				'permission_callback' => array( $this, 'admin_permissions_check' ),
+				'permission_callback' => array( __CLASS__, 'admin_permissions_check' ),
 				'args'                => array(
 					'provider' => array(
 						'required'          => true,
@@ -112,12 +112,13 @@ class Maqsy_Rest_Controller {
 	 * block editor and must not leak FAQ titles to anonymous visitors.
 	 * The callback itself additionally filters each FAQ through a per-post
 	 * 'read_post' capability check so unpublished FAQs are never exposed to
-	 * users who could not otherwise see them.
+	 * users who could not otherwise see them. Also used by the quiz
+	 * builder's preview route.
 	 *
 	 * @since    1.0.0
 	 * @return   bool
 	 */
-	public function editor_permissions_check() {
+	public static function editor_permissions_check() {
 		return current_user_can( 'edit_posts' );
 	}
 
@@ -125,12 +126,14 @@ class Maqsy_Rest_Controller {
 	 * Permission check limiting a route to users who can manage options.
 	 *
 	 * Used by the "fetch models" route, which is only ever called from the
-	 * AI chat settings page and accepts an API key in its request body.
+	 * AI chat settings page and accepts an API key in its request body, and
+	 * by the quiz routes that spend the site's AI credits or expose
+	 * visitors' contact details (AI generation, analytics).
 	 *
 	 * @since    1.0.0
 	 * @return   bool
 	 */
-	public function admin_permissions_check() {
+	public static function admin_permissions_check() {
 		return current_user_can( 'manage_options' );
 	}
 
@@ -217,9 +220,21 @@ class Maqsy_Rest_Controller {
 			return new WP_Error( 'maqsy_ai_message_too_long', __( 'Your message is too long.', 'maqsy-faq-ai-chat' ), array( 'status' => 400 ) );
 		}
 
-		$rate_limit_error = $this->check_rate_limit();
-		if ( is_wp_error( $rate_limit_error ) ) {
-			return $rate_limit_error;
+		// A message that is exactly a quiz's keyword starts that quiz without
+		// asking the AI (so it costs nothing and works however busy the AI is).
+		$keyword_quiz = Maqsy_Quizzes::match_keyword( $message );
+		if ( $keyword_quiz ) {
+			return rest_ensure_response(
+				array(
+					'reply' => '',
+					'quiz'  => $keyword_quiz,
+					'start' => true,
+				)
+			);
+		}
+
+		if ( self::is_rate_limited( 'maqsy_chat_rate', 10, MINUTE_IN_SECONDS ) ) {
+			return new WP_Error( 'maqsy_ai_rate_limited', __( 'You are sending messages too quickly. Please wait a moment and try again.', 'maqsy-faq-ai-chat' ), array( 'status' => 429 ) );
 		}
 
 		$reply = Maqsy_AI_Chat::ask( $message, (array) $request->get_param( 'history' ) );
@@ -229,28 +244,53 @@ class Maqsy_Rest_Controller {
 			return $reply;
 		}
 
-		return rest_ensure_response( array( 'reply' => $reply ) );
+		// Turn a [[quiz:ID]] token the model may append into a structured
+		// suggestion the widget renders as a "Start quiz" card.
+		$suggestion = Maqsy_Quizzes::extract_suggestion( $reply );
+
+		return rest_ensure_response(
+			array(
+				'reply' => $suggestion['reply'],
+				'quiz'  => $suggestion['quiz'],
+			)
+		);
 	}
 
 	/**
-	 * A simple per-IP rate limit so the public chat endpoint can't be used
-	 * to run up the site owner's AI provider bill.
+	 * A simple per-IP fixed-window rate limit, so the public endpoints can't
+	 * be used to run up the site owner's AI provider bill. Counts this
+	 * request when it is allowed.
 	 *
-	 * @since    1.0.0
-	 * @return   true|WP_Error
+	 * @since    1.2.0
+	 * @param    string $bucket Transient key prefix naming the limit.
+	 * @param    int    $max    Requests allowed per window.
+	 * @param    int    $window Window length in seconds.
+	 * @return   bool Whether the request is over the limit.
 	 */
-	private function check_rate_limit() {
+	public static function is_rate_limited( $bucket, $max, $window ) {
 
 		$ip    = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : 'unknown';
-		$key   = 'maqsy_chat_rate_' . md5( $ip );
-		$count = (int) get_transient( $key );
+		$key   = $bucket . '_' . md5( $ip );
+		$now   = time();
+		$state = get_transient( $key );
 
-		if ( $count >= 10 ) {
-			return new WP_Error( 'maqsy_ai_rate_limited', __( 'You are sending messages too quickly. Please wait a moment and try again.', 'maqsy-faq-ai-chat' ), array( 'status' => 429 ) );
+		// The window's start is stored with the count: set_transient() resets
+		// the expiry on every write, so the expiry alone would turn this into
+		// a sliding window that only clears after a full idle period.
+		if ( ! is_array( $state ) || ! isset( $state['count'], $state['start'] ) || $now - (int) $state['start'] >= $window ) {
+			$state = array(
+				'count' => 0,
+				'start' => $now,
+			);
 		}
 
-		set_transient( $key, $count + 1, MINUTE_IN_SECONDS );
+		if ( $state['count'] >= $max ) {
+			return true;
+		}
 
-		return true;
+		++$state['count'];
+		set_transient( $key, $state, max( 1, (int) $state['start'] + $window - $now ) );
+
+		return false;
 	}
 }

@@ -1,7 +1,7 @@
 import { createRoot, type Root } from "react-dom/client";
 
 import tailwindCss from "./tailwind.built.txt";
-import { ChatApp } from "./ChatApp";
+import { ChatApp, type QuizRequest } from "./ChatApp";
 import type { ChatAppApi, ChatSettings } from "./types";
 
 export function mountChatApp(
@@ -19,6 +19,7 @@ export function mountChatApp(
 	const root: Root = createRoot(container);
 
 	let isOpen = true;
+	let quizRequest: QuizRequest | null = null;
 	anchorElement.setAttribute("aria-expanded", "true");
 
 	function renderApp() {
@@ -29,6 +30,7 @@ export function mountChatApp(
 				onClose={() => api.close()}
 				anchor={anchorElement}
 				container={container}
+				quizRequest={quizRequest}
 			/>,
 		);
 	}
@@ -53,6 +55,10 @@ export function mountChatApp(
 		},
 		isOpen() {
 			return isOpen;
+		},
+		startQuiz(quizId, source) {
+			quizRequest = { id: quizId, source, seq: (quizRequest?.seq ?? 0) + 1 };
+			api.open();
 		},
 	};
 

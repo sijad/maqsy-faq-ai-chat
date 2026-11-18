@@ -14,8 +14,18 @@ import {
 } from "./ui/message-scroller";
 import { useColorMode } from "./useColorMode";
 import { useStoredMessages } from "./useStoredMessages";
+import { useQuiz } from "./useQuiz";
 import { renderSimpleMarkdown } from "./lib/markdown";
-import type { ChatSettings } from "./types";
+import { QuizComposer } from "./quiz/QuizComposer";
+import { QuizResultCard, QuizStartCard } from "./quiz/QuizCards";
+import type { ChatMessage, ChatSettings, QuizSource } from "./types";
+
+/** A request (from a page link or the launcher API) to start a quiz; seq makes repeats distinct. */
+export interface QuizRequest {
+	id: number;
+	source: QuizSource;
+	seq: number;
+}
 
 interface ChatAppProps {
 	settings: ChatSettings;
@@ -23,10 +33,35 @@ interface ChatAppProps {
 	onClose: () => void;
 	anchor: HTMLElement;
 	container: HTMLElement | ShadowRoot;
+	quizRequest: QuizRequest | null;
 }
 
-export function ChatApp({ settings, open, onClose, anchor, container }: ChatAppProps) {
+/** Plain conversation turns — quiz transcript lines and result cards stay out of the AI's history. */
+function isConversationMessage(message: ChatMessage): boolean {
+	return !message.isError && !message.kind && !message.result && (message.content.trim() !== "" || !!message.suggestion);
+}
+
+/** A turn as the AI wrote it: the server strips the [[quiz:ID]] token into `suggestion`, so put it back for the history to show a quiz was already suggested. */
+function toHistoryContent({ content, suggestion }: ChatMessage): string {
+	const token = suggestion ? `[[quiz:${suggestion.id}]]` : "";
+	return [content.slice(0, 16000 - token.length - 1).trim(), token].filter(Boolean).join("\n");
+}
+
+export function ChatApp({ settings, open, onClose, anchor, container, quizRequest }: ChatAppProps) {
 	const [messages, setMessages] = useStoredMessages(settings.storageKey);
+	const quiz = useQuiz(settings, setMessages);
+	const strings = settings.quizStrings;
+	const quizzes = settings.quizzes || [];
+	const [showQuizMenu, setShowQuizMenu] = useState(false);
+
+	useEffect(() => {
+		if (quizRequest) {
+			setShowQuizMenu(false);
+			quiz.start(quizRequest.id, quizRequest.source);
+		}
+		// Only when a new request arrives (seq changes), not when quiz state does.
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [quizRequest?.seq]);
 	const [input, setInput] = useState("");
 	const [isSending, setIsSending] = useState(false);
 	const [isLongWait, setIsLongWait] = useState(false);
@@ -62,8 +97,8 @@ export function ChatApp({ settings, open, onClose, anchor, container }: ChatAppP
 			return;
 		}
 
-		const nextMessages = [...messages, { role: "user" as const, content: text }];
-		setMessages(nextMessages);
+		const userMessage: ChatMessage = { role: "user", content: text };
+		setMessages((previous) => [...previous, userMessage]);
 		setInput("");
 		setIsSending(true);
 
@@ -81,9 +116,9 @@ export function ChatApp({ settings, open, onClose, anchor, container }: ChatAppP
 				body: JSON.stringify({
 					message: text,
 					history: settings.historyLimit > 0
-						? messages.filter((message) => !message.isError)
+						? messages.filter(isConversationMessage)
 							.slice(-Math.min(20, settings.historyLimit))
-							.map(({ role, content }) => ({ role, content: content.slice(0, 16000) }))
+							.map((message) => ({ role: message.role, content: toHistoryContent(message) }))
 						: [],
 				}),
 			});
@@ -93,9 +128,17 @@ export function ChatApp({ settings, open, onClose, anchor, container }: ChatAppP
 				throw new Error(data.message || "Request failed");
 			}
 
-			setMessages([...nextMessages, { role: "assistant", content: data.reply }]);
+			if (data.start && data.quiz) {
+				// The message was a quiz keyword: keep it in the transcript but out of the AI's history.
+				setMessages((previous) => previous.map((message) => (message === userMessage ? { ...message, kind: "quiz" } : message)));
+				setShowQuizMenu(false);
+				quiz.start(data.quiz.id, "keyword");
+				return;
+			}
+
+			setMessages((previous) => [...previous, { role: "assistant", content: data.reply || "", suggestion: data.quiz || undefined }]);
 		} catch (error) {
-			setMessages([...nextMessages, { role: "assistant", content: settings.errorMessage, isError: true }]);
+			setMessages((previous) => [...previous, { role: "assistant", content: settings.errorMessage, isError: true }]);
 		} finally {
 			setIsSending(false);
 		}
@@ -148,13 +191,25 @@ export function ChatApp({ settings, open, onClose, anchor, container }: ChatAppP
 							</TooltipContent>
 						</Tooltip>
 					</div>
-					<Button
-						className="bg-transparent text-gray-500 hover:bg-gray-200 hover:brightness-100 dark:text-gray-400 dark:hover:bg-gray-700"
-						onClick={onClose}
-						aria-label="Close chat"
-					>
-						✕
-					</Button>
+					<div className="flex items-center gap-1">
+						{quizzes.length > 0 && !quiz.active && (
+							<Button
+								className="size-auto h-7 bg-transparent px-2 text-xs font-medium text-gray-600 hover:bg-gray-200 hover:brightness-100 aria-expanded:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-700 dark:aria-expanded:bg-gray-700"
+								onClick={() => setShowQuizMenu((value) => !value)}
+								aria-expanded={showQuizMenu}
+								aria-controls="maqsy-quiz-menu"
+							>
+								{strings.menuButton}
+							</Button>
+						)}
+						<Button
+							className="bg-transparent text-gray-500 hover:bg-gray-200 hover:brightness-100 dark:text-gray-400 dark:hover:bg-gray-700"
+							onClick={onClose}
+							aria-label="Close chat"
+						>
+							✕
+						</Button>
+					</div>
 				</div>
 
 				<MessageScrollerProvider autoScroll defaultScrollPosition="end">
@@ -162,12 +217,27 @@ export function ChatApp({ settings, open, onClose, anchor, container }: ChatAppP
 						<MessageScrollerViewport className="p-4" aria-label="Chat messages" role="log">
 							<MessageScrollerContent>
 								{messages.length === 0 && (
-									<p className="text-sm text-gray-500 dark:text-gray-400">
-										{settings.welcomeMessage}
-									</p>
+									<div className="flex flex-col gap-3">
+										<p className="text-sm text-gray-500 dark:text-gray-400">
+											{settings.welcomeMessage}
+										</p>
+										{quizzes.length > 0 && !quiz.active && (
+											<div className="flex flex-col gap-1.5">
+												<p className="text-xs font-medium text-gray-500 dark:text-gray-400">{strings.menuTitle}</p>
+												{quizzes.map((item) => (
+													<QuizStartCard key={item.id} quiz={item} strings={strings} disabled={quiz.busy} onStart={() => quiz.start(item.id, "manual")} />
+												))}
+											</div>
+										)}
+									</div>
 								)}
 								{messages.map((message, index) => (
 									<MessageScrollerItem key={index} messageId={String(index)}>
+										{message.result ? (
+											<QuizResultCard result={message.result} quiz={quiz} strings={strings} />
+										) : (
+										<div className="flex flex-col gap-2">
+										{message.content !== "" && (
 										<div
 											className={`flex ${
 												message.role === "user" ? "justify-end" : "justify-start"
@@ -199,9 +269,20 @@ export function ChatApp({ settings, open, onClose, anchor, container }: ChatAppP
 												);
 											})()}
 										</div>
+										)}
+										{message.suggestion && (
+											<QuizStartCard
+												quiz={message.suggestion}
+												strings={strings}
+												disabled={quiz.busy || quiz.active?.quiz.id === message.suggestion.id}
+												onStart={() => quiz.start(message.suggestion!.id, "suggested")}
+											/>
+										)}
+										</div>
+										)}
 									</MessageScrollerItem>
 								))}
-								{isSending && (
+								{(isSending || quiz.busy) && (
 									<MessageScrollerItem messageId="pending" scrollAnchor={false}>
 										<div role="status" className="flex w-fit max-w-[85%] items-center gap-3 rounded-lg bg-gray-100 px-3 py-3 text-sm text-gray-600 dark:bg-gray-800 dark:text-gray-300">
 											<span aria-hidden="true" className="flex shrink-0 gap-1">
@@ -209,7 +290,13 @@ export function ChatApp({ settings, open, onClose, anchor, container }: ChatAppP
 													<span key={dot} className="maqsy-typing-dot size-1.5 rounded-full bg-current" style={{ animationDelay: `${dot * 160}ms` }} />
 												))}
 											</span>
-											<span>{isLongWait ? settings.waitingMessage : settings.loadingMessage}</span>
+											{isSending ? (
+												<span>{isLongWait ? settings.waitingMessage : settings.loadingMessage}</span>
+											) : quiz.busyLabel ? (
+												<span>{quiz.busyLabel}</span>
+											) : (
+												<span className="sr-only">{settings.loadingMessage}</span>
+											)}
 										</div>
 									</MessageScrollerItem>
 								)}
@@ -219,6 +306,40 @@ export function ChatApp({ settings, open, onClose, anchor, container }: ChatAppP
 					</MessageScroller>
 				</MessageScrollerProvider>
 
+				{quiz.active?.status === "active" && quiz.active.question ? (
+					<QuizComposer quiz={quiz} active={quiz.active} strings={strings} />
+				) : (
+				<>
+				{quiz.active?.status === "paused" && (
+					<div className="flex items-center justify-between gap-2 border-t border-gray-200 bg-gray-50 px-3 py-2 text-xs dark:border-gray-700 dark:bg-gray-800">
+						<span className="min-w-0 truncate font-medium text-gray-700 dark:text-gray-200">{quiz.active.quiz.title}</span>
+						<span className="flex shrink-0 gap-1">
+							<Button className="size-auto h-7 bg-transparent px-2 text-xs text-gray-600 hover:bg-gray-200 hover:brightness-100 dark:text-gray-300 dark:hover:bg-gray-700" disabled={quiz.busy} onClick={quiz.exit}>
+								{strings.exit}
+							</Button>
+							<Button className="size-auto h-7 px-2 text-xs" disabled={quiz.busy} onClick={quiz.resume}>
+								{strings.resume}
+							</Button>
+						</span>
+					</div>
+				)}
+				{showQuizMenu && !quiz.active && quizzes.length > 0 && (
+					<div id="maqsy-quiz-menu" className="flex max-h-48 flex-col gap-1.5 overflow-y-auto border-t border-gray-200 p-3 dark:border-gray-700">
+						<p className="text-xs font-medium text-gray-500 dark:text-gray-400">{strings.menuTitle}</p>
+						{quizzes.map((item) => (
+							<QuizStartCard
+								key={item.id}
+								quiz={item}
+								strings={strings}
+								disabled={quiz.busy}
+								onStart={() => {
+									setShowQuizMenu(false);
+									quiz.start(item.id, "manual");
+								}}
+							/>
+						))}
+					</div>
+				)}
 				<form
 					className="relative flex items-end gap-2 border-t border-gray-200 p-3 dark:border-gray-700"
 					onSubmit={(event) => {
@@ -259,6 +380,8 @@ export function ChatApp({ settings, open, onClose, anchor, container }: ChatAppP
 						↑
 					</Button>
 				</form>
+				</>
+				)}
 			</PopoverContent>
 		</Popover>
 	);

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import type { Dispatch, SetStateAction } from 'react';
 import type { ChatMessage } from './types';
 
 const MAX_STORED_MESSAGES = 50;
@@ -22,7 +23,7 @@ function readStoredMessages( storageKey: string ): ChatMessage[] {
  */
 export function useStoredMessages(
 	storageKey: string
-): [ ChatMessage[], ( messages: ChatMessage[] ) => void ] {
+): [ ChatMessage[], Dispatch< SetStateAction< ChatMessage[] > > ] {
 	const [ messages, setMessages ] = useState< ChatMessage[] >( () =>
 		readStoredMessages( storageKey )
 	);

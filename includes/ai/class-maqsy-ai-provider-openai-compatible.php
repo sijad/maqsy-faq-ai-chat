@@ -44,6 +44,7 @@ class Maqsy_AI_Provider_OpenAI_Compatible implements Maqsy_AI_Provider, Maqsy_AI
 		$api_key  = isset( $settings['api_key'] ) ? $settings['api_key'] : '';
 		$model    = ! empty( $settings['model'] ) ? $settings['model'] : 'gpt-4o-mini';
 		$base_url = ! empty( $settings['base_url'] ) ? untrailingslashit( $settings['base_url'] ) : 'https://api.openai.com/v1';
+		$timeout  = ! empty( $settings['timeout'] ) ? (int) $settings['timeout'] : 20;
 
 		if ( ! $api_key ) {
 			return new WP_Error( 'maqsy_ai_missing_key', __( 'The AI chat provider is not configured with an API key.', 'maqsy-faq-ai-chat' ) );
@@ -52,7 +53,7 @@ class Maqsy_AI_Provider_OpenAI_Compatible implements Maqsy_AI_Provider, Maqsy_AI
 		$response = wp_remote_post(
 			$base_url . '/chat/completions',
 			array(
-				'timeout' => 20,
+				'timeout' => $timeout,
 				'headers' => array(
 					'Authorization' => 'Bearer ' . $api_key,
 					'Content-Type'  => 'application/json',
@@ -75,7 +76,7 @@ class Maqsy_AI_Provider_OpenAI_Compatible implements Maqsy_AI_Provider, Maqsy_AI
 
 		if ( $code < 200 || $code >= 300 ) {
 			$message = isset( $body['error']['message'] ) ? $body['error']['message'] : __( 'The AI provider returned an error.', 'maqsy-faq-ai-chat' );
-			return new WP_Error( 'maqsy_ai_request_failed', $message );
+			return new WP_Error( 'maqsy_ai_request_failed', $message, array( 'provider_status' => $code ) );
 		}
 
 		$reply = isset( $body['choices'][0]['message']['content'] ) ? $body['choices'][0]['message']['content'] : '';

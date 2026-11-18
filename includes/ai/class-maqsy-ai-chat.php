@@ -118,6 +118,11 @@ class Maqsy_AI_Chat {
 			$parts[] = __( 'FAQ content:', 'maqsy-faq-ai-chat' ) . "\n" . $faq_context;
 		}
 
+		$quiz_prompt = Maqsy_Quizzes::get_suggestion_prompt();
+		if ( $quiz_prompt ) {
+			$parts[] = $quiz_prompt;
+		}
+
 		$prompt = implode( "\n\n", $parts );
 
 		/**
@@ -138,33 +143,52 @@ class Maqsy_AI_Chat {
 	 */
 	private static function get_faq_context() {
 
-		$faq_posts = get_posts(
-			array(
-				'post_type'   => 'maqsy',
-				'post_status' => 'publish',
-				'numberposts' => -1,
-			)
-		);
-
 		$lines        = array();
 		$allowed_html = array(
 			'a' => array(
 				'href' => true,
 			),
 		);
-		foreach ( $faq_posts as $faq_post ) {
-			$questions = get_post_meta( $faq_post->ID, '_maqsy_questions', true );
-			$questions = $questions ? json_decode( $questions, true ) : false;
-
-			if ( ! $questions ) {
-				continue;
-			}
-			$lines[] = $faq_post->post_title . ' FAQs:';
-			foreach ( $questions as $question ) {
+		foreach ( self::get_faq_groups() as $group ) {
+			$lines[] = $group['title'] . ' FAQs:';
+			foreach ( $group['questions'] as $question ) {
 				$lines[] = 'Q: ' . wp_kses( $question['question'], $allowed_html ) . "\nA: " . wp_kses( $question['answer'], $allowed_html );
 			}
 		}
 
 		return implode( "\n\n", $lines );
+	}
+
+	/**
+	 * Published FAQ posts with their decoded questions, skipping posts without any.
+	 *
+	 * @since  1.2.0
+	 * @param  int $limit Maximum number of FAQ posts, or -1 for all.
+	 * @return array[] Each { title, questions: array[] of { question, answer } }.
+	 */
+	public static function get_faq_groups( $limit = -1 ) {
+
+		$faq_posts = get_posts(
+			array(
+				'post_type'   => 'maqsy',
+				'post_status' => 'publish',
+				'numberposts' => $limit,
+			)
+		);
+
+		$groups = array();
+		foreach ( $faq_posts as $faq_post ) {
+			$questions = json_decode( (string) get_post_meta( $faq_post->ID, '_maqsy_questions', true ), true );
+
+			if ( ! $questions || ! is_array( $questions ) ) {
+				continue;
+			}
+			$groups[] = array(
+				'title'     => $faq_post->post_title,
+				'questions' => $questions,
+			);
+		}
+
+		return $groups;
 	}
 }

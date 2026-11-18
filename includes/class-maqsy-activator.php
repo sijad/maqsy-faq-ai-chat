@@ -25,5 +25,7 @@ class Maqsy_Activator {
 	 * @since 1.0.0
 	 */
 	public static function activate() {
+		require_once plugin_dir_path( __DIR__ ) . 'includes/quiz/class-maqsy-quiz-store.php';
+		Maqsy_Quiz_Store::install();
 	}
 }

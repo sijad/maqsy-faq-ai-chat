@@ -2,8 +2,9 @@
 /**
  * Fired when the plugin is uninstalled.
  *
- * Removes all data the plugin created: every `maqsy` FAQ post (and its
- * post meta, via wp_delete_post()'s force-delete), and the plugin's options.
+ * Removes all data the plugin created: every `maqsy` FAQ and `maqsy_quiz`
+ * quiz post (and their post meta, via wp_delete_post()'s force-delete), the
+ * quiz sessions/events tables, and the plugin's options.
  *
  * @since      1.0.0
  *
@@ -15,6 +16,8 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 	exit;
 }
 
+require_once plugin_dir_path( __FILE__ ) . 'includes/quiz/class-maqsy-quiz-store.php';
+
 /**
  * Delete all Maqsy data for a single site.
  *
@@ -22,18 +25,20 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
  */
 function maqsy_uninstall_site() {
 
-	$faq_ids = get_posts(
+	$post_ids = get_posts(
 		array(
-			'post_type'   => 'maqsy',
+			'post_type'   => array( 'maqsy', 'maqsy_quiz' ),
 			'post_status' => 'any',
 			'numberposts' => -1,
 			'fields'      => 'ids',
 		)
 	);
 
-	foreach ( $faq_ids as $faq_id ) {
-		wp_delete_post( $faq_id, true );
+	foreach ( $post_ids as $post_id ) {
+		wp_delete_post( $post_id, true );
 	}
+
+	Maqsy_Quiz_Store::drop_tables();
 
 	delete_option( 'maqsy_ai_settings' );
 }

@@ -1,0 +1,481 @@
+/* Quiz builder (post.php?post_type=maqsy_quiz). Uses wp-admin's own palette. */
+
+.maqsy-quiz-builder {
+	margin: 1em 0 0;
+}
+
+.maqsy-qb {
+	--maqsy-qb-border: #dcdcde;
+	--maqsy-qb-muted: #646970;
+	--maqsy-qb-accent: var(--wp-admin-theme-color, #2271b1);
+}
+
+.maqsy-qb-toolbar {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-bottom: 12px;
+}
+
+.maqsy-qb .components-notice {
+	margin: 0 0 12px;
+}
+
+.maqsy-qb-problems ul {
+	margin: 4px 0 0 1.2em;
+	list-style: disc;
+}
+
+/* stylelint-disable-next-line selector-class-pattern -- WordPress core class. */
+.maqsy-qb-tabs .components-tab-panel__tabs {
+	margin-bottom: 16px;
+	border-bottom: 1px solid var(--maqsy-qb-border);
+}
+
+.maqsy-qb-list {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.maqsy-qb-empty {
+	padding: 24px;
+	text-align: center;
+	color: var(--maqsy-qb-muted);
+	border: 1px dashed var(--maqsy-qb-border);
+	border-radius: 4px;
+	background: #fff;
+}
+
+.maqsy-qb-add {
+	align-self: flex-start;
+}
+
+/* Cards */
+.maqsy-qb-card {
+	background: #fff;
+	border: 1px solid var(--maqsy-qb-border);
+	border-radius: 4px;
+	box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+}
+
+.maqsy-qb-card.is-expanded {
+	border-color: #c3c4c7;
+}
+
+.maqsy-qb-card-header {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	padding-right: 6px;
+}
+
+.maqsy-qb-card-toggle {
+	display: flex;
+	flex: 1;
+	align-items: center;
+	gap: 10px;
+	min-width: 0;
+	padding: 10px 12px;
+	border: 0;
+	background: none;
+	text-align: left;
+	cursor: pointer;
+	font: inherit;
+	color: inherit;
+}
+
+.maqsy-qb-card-toggle:focus-visible {
+	outline: 2px solid var(--maqsy-qb-accent);
+	outline-offset: -2px;
+}
+
+.maqsy-qb-card-number {
+	display: inline-flex;
+	flex: 0 0 auto;
+	align-items: center;
+	justify-content: center;
+	width: 24px;
+	height: 24px;
+	border-radius: 50%;
+	background: var(--maqsy-qb-accent);
+	color: #fff;
+	font-size: 12px;
+	font-weight: 600;
+}
+
+.maqsy-qb-card-number.is-outcome {
+	border-radius: 4px;
+	background: #1d2327;
+}
+
+.maqsy-qb-card-title {
+	overflow: hidden;
+	flex: 1;
+	min-width: 0;
+	font-weight: 600;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+}
+
+.maqsy-qb-badges {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+	justify-content: flex-end;
+}
+
+.maqsy-qb-badge {
+	display: inline-block;
+	padding: 1px 8px;
+	border-radius: 10px;
+	background: #f0f0f1;
+	color: #50575e;
+	font-size: 11px;
+	line-height: 18px;
+	white-space: nowrap;
+}
+
+.maqsy-qb-badge.is-info {
+	background: #e5f0fa;
+	color: #135e96;
+}
+
+.maqsy-qb-badge.is-success {
+	background: #e7f5ea;
+	color: #00631a;
+}
+
+.maqsy-qb-card-actions {
+	display: flex;
+	flex: 0 0 auto;
+}
+
+.maqsy-qb-card-body {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	padding: 4px 16px 16px;
+	border-top: 1px solid #f0f0f1;
+	padding-top: 16px;
+}
+
+.maqsy-qb-grid {
+	display: grid;
+	grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+	gap: 12px;
+	align-items: start;
+}
+
+.maqsy-qb-section {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	margin: 0;
+	padding: 12px;
+	border: 1px solid #f0f0f1;
+	border-radius: 4px;
+	background: #fcfcfc;
+}
+
+.maqsy-qb-section > legend {
+	padding: 0 4px;
+	font-weight: 600;
+}
+
+.maqsy-qb-section .description {
+	margin: 0;
+}
+
+/* Answer options */
+.maqsy-qb-option {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	padding-bottom: 10px;
+	border-bottom: 1px solid #f0f0f1;
+}
+
+.maqsy-qb-option-main {
+	display: grid;
+	grid-template-columns: minmax(0, 3fr) minmax(0, 2fr) auto;
+	gap: 8px;
+	align-items: center;
+}
+
+.maqsy-qb-scores {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px 12px;
+	padding-left: 2px;
+}
+
+.maqsy-qb-score {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 12px;
+	color: var(--maqsy-qb-muted);
+}
+
+.maqsy-qb-score span {
+	overflow: hidden;
+	max-width: 140px;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+}
+
+.maqsy-qb-score input[type="number"] {
+	width: 64px;
+	min-height: 28px;
+}
+
+/* Conditions */
+.maqsy-qb-conditions {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	align-items: stretch;
+}
+
+.maqsy-qb-conditions > .components-button {
+	align-self: flex-start;
+}
+
+.maqsy-qb-rule {
+	display: grid;
+	grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 2fr) auto;
+	gap: 8px;
+	align-items: center;
+}
+
+.maqsy-qb-recommendation {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.5fr) auto;
+	gap: 8px;
+	align-items: end;
+}
+
+.maqsy-qb-personalize {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	margin-top: -8px;
+	padding: 10px 12px;
+	border-radius: 4px;
+	background: #f6f7f7;
+}
+
+.maqsy-qb-personalize p {
+	margin: 0;
+}
+
+.maqsy-qb-personalize-chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+.maqsy-qb-token-hint {
+	margin: 0;
+	color: var(--maqsy-qb-muted);
+	font-size: 12px;
+}
+
+/* Settings */
+.maqsy-qb-settings {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+	gap: 12px;
+}
+
+.maqsy-qb-panel {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	padding: 16px;
+	border: 1px solid var(--maqsy-qb-border);
+	border-radius: 4px;
+	background: #fff;
+}
+
+.maqsy-qb-panel h3 {
+	margin: 0;
+	font-size: 14px;
+}
+
+.maqsy-qb-panel p {
+	margin: 0;
+}
+
+.maqsy-qb-copy {
+	user-select: all;
+	word-break: break-all;
+}
+
+/* Preview */
+.maqsy-qb-preview {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) 280px;
+	gap: 16px;
+	align-items: start;
+}
+
+.maqsy-qb-preview-chat {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	max-width: 560px;
+	min-height: 240px;
+	padding: 16px;
+	border: 1px solid var(--maqsy-qb-border);
+	border-radius: 8px;
+	background: #fff;
+}
+
+.maqsy-qb-preview-chat > div {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.maqsy-qb-bubble {
+	align-self: flex-start;
+	max-width: 85%;
+	padding: 8px 12px;
+	border-radius: 8px;
+	background: #f0f0f1;
+	white-space: pre-wrap;
+}
+
+.maqsy-qb-bubble small {
+	display: block;
+	margin-top: 2px;
+	color: var(--maqsy-qb-muted);
+}
+
+.maqsy-qb-bubble.is-user {
+	align-self: flex-end;
+	background: var(--maqsy-qb-accent);
+	color: #fff;
+}
+
+.maqsy-qb-preview-controls {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+.maqsy-qb-preview-text {
+	display: flex;
+	flex: 1 1 100%;
+	gap: 8px;
+	align-items: flex-end;
+}
+
+.maqsy-qb-preview-text .components-base-control {
+	flex: 1;
+}
+
+.maqsy-qb-preview-result {
+	padding: 12px;
+	border: 1px solid var(--maqsy-qb-border);
+	border-radius: 8px;
+}
+
+.maqsy-qb-preview-result h3 {
+	margin: 0 0 8px;
+}
+
+.maqsy-qb-preview-eyebrow {
+	margin: 0;
+	color: var(--maqsy-qb-muted);
+	font-size: 11px;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+}
+
+.maqsy-qb-preview-offer {
+	padding: 6px 10px;
+	border-radius: 4px;
+	background: #fcf9e8;
+	font-weight: 600;
+}
+
+.maqsy-qb-prewrap {
+	white-space: pre-wrap;
+}
+
+.maqsy-qb-preview-side {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	align-items: flex-start;
+}
+
+.maqsy-qb-preview-side h4 {
+	margin: 8px 0 0;
+}
+
+.maqsy-qb-scoretable td.num {
+	width: 48px;
+	text-align: right;
+	font-variant-numeric: tabular-nums;
+}
+
+.maqsy-qb-scoretable tr.is-winner td {
+	font-weight: 600;
+	background: #e7f5ea;
+}
+
+.maqsy-qb-scoretable .maqsy-qb-badge {
+	margin-left: 6px;
+}
+
+/* Generate modal */
+.maqsy-qb-generate {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+.maqsy-qb-generate-actions {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+	justify-content: flex-end;
+}
+
+.maqsy-qb-generate-status {
+	display: inline-flex;
+	flex: 1;
+	align-items: center;
+	color: var(--maqsy-qb-muted);
+}
+
+/* Quiz list table */
+/* stylelint-disable-next-line selector-class-pattern -- WordPress core class. */
+.column-maqsy_embed .maqsy-quiz-code {
+	user-select: all;
+	font-size: 12px;
+}
+
+.maqsy-quiz-warning {
+	color: #b32d2e;
+	font-size: 12px;
+}
+
+@media (max-width: 782px) {
+
+	.maqsy-qb-grid,
+	.maqsy-qb-option-main,
+	.maqsy-qb-rule,
+	.maqsy-qb-recommendation,
+	.maqsy-qb-preview {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.maqsy-qb-badges {
+		display: none;
+	}
+}

@@ -1,0 +1,370 @@
+/* Quiz analytics dashboard (FAQs → Quiz Analytics). wp-admin is light-only. */
+
+.maqsy-qa {
+	--maqsy-qa-surface: #fff;
+	--maqsy-qa-border: #dcdcde;
+	--maqsy-qa-grid: #f0f0f1;
+	--maqsy-qa-text: #1d2327;
+	--maqsy-qa-muted: #646970;
+
+	max-width: 1280px;
+	color: var(--maqsy-qa-text);
+}
+
+.maqsy-qa-filters {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12px;
+	align-items: flex-end;
+	margin: 12px 0 16px;
+}
+
+.maqsy-qa-filters .components-base-control {
+	min-width: 220px;
+}
+
+.maqsy-qa-body {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+/* Stat tiles */
+.maqsy-qa-tiles {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+	gap: 12px;
+}
+
+.maqsy-qa-tile {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	padding: 14px 16px;
+	border: 1px solid var(--maqsy-qa-border);
+	border-radius: 6px;
+	background: var(--maqsy-qa-surface);
+}
+
+.maqsy-qa-tile-label {
+	color: var(--maqsy-qa-muted);
+	font-size: 13px;
+}
+
+.maqsy-qa-tile-value {
+	font-size: 28px;
+	font-weight: 600;
+	line-height: 1.25;
+	font-variant-numeric: tabular-nums;
+}
+
+.maqsy-qa-tile-detail {
+	color: var(--maqsy-qa-muted);
+	font-size: 12px;
+}
+
+/* Sections */
+.maqsy-qa-section {
+	padding: 16px;
+	border: 1px solid var(--maqsy-qa-border);
+	border-radius: 6px;
+	background: var(--maqsy-qa-surface);
+}
+
+.maqsy-qa-section > header {
+	display: flex;
+	gap: 12px;
+	align-items: flex-start;
+	justify-content: space-between;
+	margin-bottom: 12px;
+}
+
+.maqsy-qa-section h2 {
+	margin: 0;
+	font-size: 15px;
+}
+
+.maqsy-qa-section header .description {
+	margin: 2px 0 0;
+}
+
+.maqsy-qa-columns {
+	display: grid;
+	grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+	gap: 16px;
+}
+
+.maqsy-qa-columns .maqsy-qa-section {
+	min-width: 0;
+}
+
+/* Line chart */
+.maqsy-qa-chart {
+	position: relative;
+}
+
+.maqsy-qa-chart svg {
+	display: block;
+	overflow: visible;
+}
+
+.maqsy-qa-grid {
+	stroke: var(--maqsy-qa-grid);
+	stroke-width: 1;
+}
+
+.maqsy-qa-axis {
+	fill: var(--maqsy-qa-muted);
+	font-size: 11px;
+	font-variant-numeric: tabular-nums;
+}
+
+.maqsy-qa-crosshair {
+	stroke: #a7aaad;
+	stroke-width: 1;
+}
+
+.maqsy-qa-legend {
+	display: flex;
+	gap: 16px;
+	margin-bottom: 6px;
+	color: var(--maqsy-qa-muted);
+	font-size: 12px;
+}
+
+.maqsy-qa-legend i,
+.maqsy-qa-tooltip i {
+	display: inline-block;
+	width: 10px;
+	height: 10px;
+	margin-right: 2px;
+	border-radius: 2px;
+	vertical-align: -1px;
+}
+
+.maqsy-qa-tooltip {
+	position: absolute;
+	z-index: 2;
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	min-width: 150px;
+	padding: 8px 10px;
+	border: 1px solid var(--maqsy-qa-border);
+	border-radius: 4px;
+	background: var(--maqsy-qa-surface);
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+	font-size: 12px;
+	pointer-events: none;
+}
+
+/* Horizontal bars */
+.maqsy-qa-bars {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	margin: 0;
+}
+
+.maqsy-qa-bars li {
+	display: grid;
+	grid-template-columns: minmax(80px, 40%) minmax(0, 1fr);
+	gap: 10px;
+	align-items: center;
+	margin: 0;
+}
+
+.maqsy-qa-bars-label {
+	overflow: hidden;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+}
+
+.maqsy-qa-bars-track {
+	display: flex;
+	gap: 6px;
+	align-items: center;
+	min-width: 0;
+}
+
+.maqsy-qa-bars-bar {
+	flex: 0 0 auto;
+	min-width: 2px;
+	height: 16px;
+	border-radius: 0 4px 4px 0;
+}
+
+.maqsy-qa-bars-value {
+	flex: 0 0 auto;
+	font-variant-numeric: tabular-nums;
+	white-space: nowrap;
+}
+
+.maqsy-qa-bars-value small,
+.maqsy-qa-muted {
+	color: var(--maqsy-qa-muted);
+}
+
+/* Funnel */
+.maqsy-qa-funnel td,
+.maqsy-qa-funnel th {
+	vertical-align: middle;
+}
+
+.maqsy-qa .num {
+	text-align: right;
+	font-variant-numeric: tabular-nums;
+	white-space: nowrap;
+}
+
+.maqsy-qa-funnel-barcol {
+	width: 28%;
+}
+
+.maqsy-qa-funnel-bar {
+	display: inline-block;
+	width: calc(100% - 4em);
+	height: 14px;
+	vertical-align: middle;
+}
+
+.maqsy-qa-funnel-bar span {
+	display: block;
+	min-width: 2px;
+	height: 100%;
+	border-radius: 0 4px 4px 0;
+}
+
+.maqsy-qa-funnel-num {
+	display: inline-block;
+	width: 3.5em;
+	padding-left: 6px;
+	font-variant-numeric: tabular-nums;
+}
+
+.maqsy-qa-funnel-toggle {
+	text-align: left;
+	text-decoration: none;
+}
+
+.maqsy-qa-funnel-toggle .dashicons {
+	color: var(--maqsy-qa-muted);
+}
+
+.maqsy-qa-funnel-detail td {
+	padding: 12px 16px 16px 36px;
+	background: #f6f7f7;
+}
+
+.maqsy-qa-funnel tr.is-hotspot td:last-child {
+	color: #b32d2e;
+	font-weight: 600;
+}
+
+.maqsy-qa-recent {
+	margin: 4px 0 0;
+	list-style: disc inside;
+}
+
+/* Sessions */
+.maqsy-qa-actions {
+	display: flex;
+	gap: 8px;
+}
+
+/* stylelint-disable-next-line selector-class-pattern -- WordPress core class. */
+.maqsy-qa-subtabs .components-tab-panel__tabs {
+	margin-bottom: 12px;
+	border-bottom: 1px solid var(--maqsy-qa-border);
+}
+
+.maqsy-qa-status {
+	display: inline-block;
+	padding: 1px 8px;
+	border-radius: 10px;
+	background: #f0f0f1;
+	font-size: 12px;
+	white-space: nowrap;
+}
+
+.maqsy-qa-status::before {
+	margin-right: 4px;
+}
+
+.maqsy-qa-status.is-completed {
+	background: #e7f5ea;
+	color: #00631a;
+}
+
+.maqsy-qa-status.is-completed::before {
+	content: "✓";
+}
+
+.maqsy-qa-status.is-dropped {
+	background: #fcf0f1;
+	color: #8a2424;
+}
+
+.maqsy-qa-status.is-dropped::before {
+	content: "✕";
+}
+
+.maqsy-qa-status.is-in-progress::before {
+	content: "…";
+}
+
+.maqsy-qa-status.is-restarted::before {
+	content: "↻";
+}
+
+.maqsy-qa-answers {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+	gap: 8px 16px;
+	margin: 0;
+}
+
+.maqsy-qa-answers dt {
+	color: var(--maqsy-qa-muted);
+	font-size: 12px;
+}
+
+.maqsy-qa-answers dd {
+	margin: 0;
+	white-space: pre-wrap;
+}
+
+.maqsy-qa-pager {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+	justify-content: flex-end;
+	margin-top: 12px;
+	color: var(--maqsy-qa-muted);
+}
+
+.maqsy-qa-pager > span:first-child {
+	margin-right: auto;
+}
+
+.maqsy-qa-empty {
+	max-width: 560px;
+	padding: 32px;
+	border: 1px solid var(--maqsy-qa-border);
+	border-radius: 6px;
+	background: #fff;
+}
+
+@media (max-width: 960px) {
+
+	.maqsy-qa-columns {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}
+
+@media (max-width: 600px) {
+
+	.maqsy-qa-funnel-barcol {
+		display: none;
+	}
+}

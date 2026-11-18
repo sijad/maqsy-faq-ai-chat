@@ -8,7 +8,7 @@
  * across the boundary in either direction.
  */
 
-import type { ChatAppApi, ChatSettings } from "../chat-app/types";
+import type { ChatAppApi, ChatSettings, QuizSource } from "../chat-app/types";
 
 function getLauncherStyles(primaryColor: string): string {
 	return `
@@ -94,6 +94,29 @@ document.addEventListener("DOMContentLoaded", function () {
 	shadowRoot.appendChild(button);
 
 	let chatApi: ChatAppApi | null = null;
+	let loading: Promise<ChatAppApi> | null = null;
+
+	function loadChat(): Promise<ChatAppApi> {
+		if (!loading) {
+			button.disabled = true;
+			loading = import("../chat-app/index.tsx")
+				.then(function (chatAppModule) {
+					// mountChatApp() renders already-open on its first (and only) initial
+					// render — don't also call open() here, or we're back to two renders
+					// in a row right at mount.
+					chatApi = chatAppModule.mountChatApp(shadowRoot, button, settings!);
+					return chatApi;
+				})
+				.catch(function (error) {
+					loading = null;
+					throw error;
+				})
+				.finally(function () {
+					button.disabled = false;
+				});
+		}
+		return loading;
+	}
 
 	button.addEventListener("click", function () {
 		if (chatApi) {
@@ -103,17 +126,38 @@ document.addEventListener("DOMContentLoaded", function () {
 			return;
 		}
 
-		button.disabled = true;
-
-		import("../chat-app/index.tsx")
-			.then(function (chatAppModule) {
-				// mountChatApp() renders already-open on its first (and only) initial
-				// render — don't also call open() here, or we're back to two renders
-				// in a row right at mount.
-				chatApi = chatAppModule.mountChatApp(shadowRoot, button, settings);
-			})
-			.finally(function () {
-				button.disabled = false;
-			});
+		void loadChat();
 	});
+
+	function startQuiz(quizId: number, source: QuizSource) {
+		void loadChat().then(function (api) {
+			api.startQuiz(quizId, source);
+		});
+	}
+
+	// Quiz links anywhere on the page — the [maqsy_quiz] shortcode's button, or
+	// any hand-written <a href="#maqsy-quiz-123"> — open the chat on that quiz.
+	const QUIZ_HASH = /^#maqsy-quiz-(\d+)$/;
+
+	document.addEventListener("click", function (event) {
+		const target = event.target instanceof Element ? event.target.closest("a[href^='#maqsy-quiz-'], [data-maqsy-quiz]") : null;
+		if (!target) {
+			return;
+		}
+		const match = QUIZ_HASH.exec(target.getAttribute("href") || "");
+		const quizId = Number(target.getAttribute("data-maqsy-quiz") || (match ? match[1] : 0));
+		if (quizId > 0) {
+			event.preventDefault();
+			startQuiz(quizId, "link");
+		}
+	});
+
+	// Deep links: https://example.com/page/#maqsy-quiz-123
+	const initial = QUIZ_HASH.exec(window.location.hash);
+	if (initial) {
+		history.replaceState(null, "", window.location.pathname + window.location.search);
+		startQuiz(Number(initial[1]), "link");
+	}
+
+	(window as unknown as { maqsyChat?: { startQuiz: typeof startQuiz } }).maqsyChat = { startQuiz };
 });

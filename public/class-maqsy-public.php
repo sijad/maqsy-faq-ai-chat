@@ -428,6 +428,38 @@ class Maqsy_Public {
 			'colorMode'      => $settings['color_mode'],
 			'primaryColor'   => $settings['primary_color'],
 			'storageKey'     => 'maqsy-chat-history:' . (string) wp_parse_url( home_url(), PHP_URL_PATH ),
+			'quizRestUrl'    => esc_url_raw( rest_url( 'maqsy/v1/quiz' ) ),
+			'quizzes'        => Maqsy_Quizzes::get_menu_quizzes(),
+			'quizStrings'    => array(
+				'menuTitle'    => __( 'Answer a few questions for a personal recommendation', 'maqsy-faq-ai-chat' ),
+				'menuButton'   => __( 'Help me choose', 'maqsy-faq-ai-chat' ),
+				'start'        => __( 'Let’s start', 'maqsy-faq-ai-chat' ),
+				'starting'     => __( 'Getting started…', 'maqsy-faq-ai-chat' ),
+				/* translators: 1: current question number, 2: estimated total. */
+				'progress'     => __( 'Question %1$d of %2$d', 'maqsy-faq-ai-chat' ),
+				'skip'         => __( 'Skip', 'maqsy-faq-ai-chat' ),
+				'pause'        => __( 'Pause', 'maqsy-faq-ai-chat' ),
+				'pauseHint'    => __( 'Pause and ask a question', 'maqsy-faq-ai-chat' ),
+				'paused'       => __( 'Paused. You can ask me anything, then pick up where you left off.', 'maqsy-faq-ai-chat' ),
+				'resume'       => __( 'Resume', 'maqsy-faq-ai-chat' ),
+				'restart'      => __( 'Restart', 'maqsy-faq-ai-chat' ),
+				'restartAgain' => __( 'Start over', 'maqsy-faq-ai-chat' ),
+				'exit'         => __( 'Stop', 'maqsy-faq-ai-chat' ),
+				'continue'     => __( 'Continue', 'maqsy-faq-ai-chat' ),
+				'selectHint'   => __( 'Select all that apply', 'maqsy-faq-ai-chat' ),
+				'answerHint'   => __( 'Type your answer…', 'maqsy-faq-ai-chat' ),
+				'skipped'      => __( 'Skipped', 'maqsy-faq-ai-chat' ),
+				'finishing'    => __( 'Finding your best match…', 'maqsy-faq-ai-chat' ),
+				'resultLabel'  => __( 'Your result', 'maqsy-faq-ai-chat' ),
+				'recommended'  => __( 'Recommended for you', 'maqsy-faq-ai-chat' ),
+				/* translators: %d: seconds until redirect. */
+				'redirecting'  => __( 'Taking you there in %d…', 'maqsy-faq-ai-chat' ),
+				'cancel'       => __( 'Stay here', 'maqsy-faq-ai-chat' ),
+				'goNow'        => __( 'Go now', 'maqsy-faq-ai-chat' ),
+				'error'        => __( 'Something went wrong. Please try again.', 'maqsy-faq-ai-chat' ),
+				'expired'      => __( 'This session has expired. You can start again any time.', 'maqsy-faq-ai-chat' ),
+				'ended'        => __( 'Stopped. Let me know if there\'s anything else I can help with.', 'maqsy-faq-ai-chat' ),
+			),
 		);
 
 		printf(
